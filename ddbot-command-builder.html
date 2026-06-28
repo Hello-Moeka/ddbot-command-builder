@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DDBOT-WSa 命令可视化生成器</title>
+<style>
+:root {
+    --bg: #f5f7fa;
+    --card-bg: #fff;
+    --text: #1a1a2e;
+    --text2: #555;
+    --text3: #999;
+    --border: #e2e6ef;
+    --accent: #5b6af0;
+    --accent2: #7c3aed;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --input-bg: #fff;
+    --input-border: #d1d5db;
+    --shadow: 0 1px 3px rgba(0,0,0,.06);
+    --radius: 8px;
+    --preview-bg: #1e1e2e;
+    --preview-text: #a6e3a1;
+    --hover-bg: #f0f2f8;
+    --tag-bg: #eef0ff;
+    --tag-text: #5b6af0;
+}
+.dark {
+    --bg: #0f1119;
+    --card-bg: #1a1c26;
+    --text: #e4e4ef;
+    --text2: #9ca3af;
+    --text3: #6b7280;
+    --border: #2a2d3a;
+    --input-bg: #252836;
+    --input-border: #3a3d4a;
+    --shadow: 0 1px 3px rgba(0,0,0,.3);
+    --preview-bg: #111318;
+    --hover-bg: #222433;
+    --tag-bg: #252742;
+    --tag-text: #a5b4fc;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+/* SIDEBAR */
+.sidebar{width:320px;min-width:320px;background:var(--card-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:16px 20px 12px;border-bottom:1px solid var(--border)}
+.sidebar-header h1{font-size:18px;font-weight:700;margin-bottom:2px}
+.sidebar-header .ver{font-size:11px;color:var(--text3)}
+.search-box{position:relative;margin:12px 16px}
+.search-box input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--input-border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;outline:none;transition:border-color .15s}
+.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,106,240,.12)}
+.search-box .sicon{position:absolute;left:10px;top:9px;color:var(--text3);width:16px;height:16px;pointer-events:none}
+.cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:8px 20px 4px;background:var(--bg);border-bottom:1px solid var(--border)}
+.cmd-list{flex:1;overflow-y:auto;padding:4px 0}
+.cmd-item{padding:8px 20px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .1s;font-size:13px;border-left:3px solid transparent}
+.cmd-item:hover{background:var(--hover-bg)}
+.cmd-item.active{background:var(--tag-bg);border-left-color:var(--accent);color:var(--accent);font-weight:600}
+.cmd-item .name{font-family:'JetBrains Mono','Fira Code',monospace;font-weight:500;flex:1}
+.cmd-item .badge{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;white-space:nowrap}
+.badge-group{background:#dbeafe;color:#2563eb}.badge-admin{background:#fce7f3;color:#be185d}.badge-both{background:#d1fae5;color:#059669}
+.dark .badge-group{background:#1e3a5f;color:#93c5fd}
+.dark .badge-admin{background:#4a1942;color:#f9a8d4}
+.dark .badge-both{background:#064e3b;color:#6ee7b7}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);min-width:0}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--card-bg);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0}
+.toolbar h2{font-size:15px;font-weight:600;white-space:nowrap}
+.toolbar .hint{font-size:12px;color:var(--text3)}
+.toolbar-right{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);cursor:pointer;font-size:12px;font-weight:500;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--hover-bg);border-color:var(--accent)}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-accent:hover{background:var(--accent2)}
+.form-area{flex:1;overflow-y:auto;padding:24px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);text-align:center}
+.empty-state svg{width:64px;height:64px;margin-bottom:16px;opacity:.4}
+.empty-state h3{font-size:16px;margin-bottom:4px;color:var(--text2)}
+.param-group{margin-bottom:18px}
+.param-label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text2)}
+.param-label .flag{font-family:'JetBrains Mono',monospace;color:var(--accent);background:var(--tag-bg);padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700}
+.param-label .required-mark{color:var(--danger);font-weight:700;margin-left:2px}
+.param-hint{font-size:11px;color:var(--text3);margin-top:2px}
+.param-input{width:100%;padding:8px 12px;border:1px solid var(--input-border);border-radius:var(--radius);background:var(--input-bg);color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s}
+.param-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,106,240,.12)}
+select.param-input{cursor:pointer}
+.param-row{display:flex;gap:8px;align-items:center}
+.param-row .param-input{flex:1}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:4px 0}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;inset:0;background:var(--input-border);border-radius:22px;transition:.2s}
+.toggle .slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.slider{background:var(--accent)}
+.toggle input:checked+.slider::before{transform:translateX(18px)}
+.tags-container{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:28px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--tag-bg);color:var(--tag-text);border-radius:4px;font-size:12px;font-family:'JetBrains Mono',monospace}
+.tag .rm{cursor:pointer;opacity:.5;font-weight:700;font-size:14px;line-height:1;transition:opacity .1s}
+.tag .rm:hover{opacity:1}
+.tag-add{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border:1px dashed var(--input-border);border-radius:4px;font-size:12px;cursor:pointer;color:var(--text3);background:transparent;transition:all .1s}
+.tag-add:hover{border-color:var(--accent);color:var(--accent)}
+.tag-input-wrap{display:flex;gap:6px}
+.tag-input-wrap input{flex:1}
+.tag-input-wrap button{padding:8px 12px;border:1px solid var(--input-border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);cursor:pointer;font-size:12px;white-space:nowrap}
+.tag-input-wrap button:hover{background:var(--hover-bg)}
+/* PREVIEW */
+.preview-bar{background:var(--preview-bg);padding:14px 24px;display:flex;align-items:center;gap:12px;border-top:1px solid var(--border);flex-shrink:0}
+.preview-code{flex:1;font-family:'JetBrains Mono','Fira Code',monospace;font-size:16px;color:var(--preview-text);word-break:break-all;min-height:24px;display:flex;align-items:center}
+.preview-code .dim{opacity:.35}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap}
+.copy-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+.copy-btn.copied{background:var(--success)!important;transform:none}
+/* CARDS */
+.desc-card{margin-bottom:18px;padding:12px 16px;background:var(--tag-bg);border-radius:var(--radius);font-size:12px;color:var(--text2);line-height:1.7}
+.desc-card b{color:var(--accent)}
+.desc-card .perm-icon{display:inline-block;margin-right:4px}
+/* MOBILE */
+@media(max-width:768px){
+    .app{flex-direction:column}
+    .sidebar{width:100%;min-width:0;max-height:42vh;border-right:none;border-bottom:1px solid var(--border)}
+    .toolbar{padding:10px 14px}
+    .form-area{padding:14px}
+    .preview-bar{padding:10px 14px}
+    .preview-code{font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>DDBOT-WSa</h1>
+      <span class="ver">命令可视化生成器 · 基于 cnxysoft/DDBOT-WSa</span>
+    </div>
+    <div class="search-box">
+      <svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="搜索命令..." oninput="filterCommands()">
+    </div>
+    <div class="cat-title">群聊命令</div>
+    <nav class="cmd-list" id="group-list"></nav>
+    <div class="cat-title">私聊 / 管理命令</div>
+    <nav class="cmd-list" id="private-list"></nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="toolbar">
+      <div style="min-width:0">
+        <h2 id="cmd-title">选择命令</h2>
+        <div class="hint" id="cmd-hint">从左侧列表中点击命令开始</div>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn" onclick="toggleDark()" title="切换主题">🌓</button>
+        <button class="btn" id="reset-btn" onclick="resetForm()">🔄 重置</button>
+      </div>
+    </div>
+    <div class="form-area" id="form-area">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 2 4.5 9h-9L12 2Z"/><path d="M3 22 4.5 19h15l1.5 3"/><line x1="12" y1="11" x2="12" y2="19"/></svg>
+        <h3>选择一个命令</h3>
+        <p style="font-size:13px">从左侧列表中点击命令，填写参数后自动生成</p>
+      </div>
+    </div>
+    <div class="preview-bar">
+      <span class="preview-code" id="preview-code"><span class="dim">/命令 [参数...]</span></span>
+      <button class="copy-btn" id="copy-btn" onclick="copyCommand()">📋 复制</button>
+    </div>
+  </main>
+</div>
+
+<script>
+// ============ COMMAND DATA (cnxysoft/DDBOT-WSa source: lsp/command.go, lsp/groupCommand.go, lsp/privateCommand.go) ============
+var SITES = ['bilibili','douyu','huya','youtube','acfun','weibo','twitcasting','twitter','douyin'];
+
+var COMMANDS = {
+  // ===== GROUP ====
+  help:{name:'help',cat:'group',badge:'group',desc:'显示帮助信息',params:[],tpl:'/help',noPerm:1},
+  roll:{name:'roll',cat:'group',badge:'group',desc:'随机数/随机选择。不填→[1,100]；N→[1,N]；A-B→[A,B]；多个→随机选一',
+    params:[{id:'RangeArg',type:'str',label:'范围',opt:1,hint:'例: 50 / 10-20 / 苹果 香蕉'}],tpl:'/roll {RangeArg}',noPerm:1},
+  checkin:{name:'签到',cat:'group',badge:'group',desc:'每日签到，积分+1',params:[],tpl:'/签到',noPerm:1},
+  score:{name:'查询积分',cat:'group',badge:'group',desc:'查看当前积分',params:[],tpl:'/查询积分',noPerm:1},
+  watch:{name:'watch',cat:'group',badge:'group',desc:'订阅推送',
+    params:[{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Type',type:'enum',label:'类型',opts:['','live','news'],opt:1,short:'t',hint:'默认根据网站推断'},{id:'Id',type:'str',label:'主播ID',req:1,hint:'房间号/UID/频道ID'}],
+    tpl:'/watch -s {Site} -t {Type} {Id}',perm:'admin / 群管理员 / QQ管理员'},
+  unwatch:{name:'unwatch',cat:'group',badge:'group',desc:'取消订阅。参数同 /watch',
+    params:[{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Type',type:'enum',label:'类型',opts:['','live','news'],opt:1,short:'t'},{id:'Id',type:'str',label:'主播ID',req:1}],
+    tpl:'/unwatch -s {Site} -t {Type} {Id}',perm:'admin / 群管理员 / QQ管理员'},
+  list:{name:'list',cat:'group',badge:'group',desc:'查看当前群订阅列表',
+    params:[{id:'Site',type:'enum',label:'网站',opts:[''].concat(SITES),opt:1,short:'s',hint:'留空=显示全部'}],
+    tpl:'/list',extras:['-s {Site}'],noPerm:1},
+  lsp:{name:'lsp',cat:'group',badge:'group',desc:'关于bot的运行信息',params:[],tpl:'/lsp',noPerm:1},
+  setu:{name:'色图',cat:'group',badge:'group',desc:'获取图片(非R18)。普通用户仅1张、无tag',
+    params:[{id:'Num',type:'num',label:'张数',opt:1,def:'1',hint:'普通用户固定1，Admin可1-10'},{id:'Tag',type:'str',label:'Tag',opt:1,short:'t',hint:'仅Admin可用'}],
+    tpl:'/色图 {Num}',extras:['-t {Tag}'],note:'默认禁用，需先 /enable 色图'},
+  huangtu:{name:'黄图',cat:'group',badge:'group',desc:'获取图片(R18)。需Admin或黄图权限',
+    params:[{id:'Num',type:'num',label:'张数',opt:1,def:'1'},{id:'Tag',type:'str',label:'Tag',opt:1,short:'t'}],
+    tpl:'/黄图 {Num}',extras:['-t {Tag}'],note:'默认禁用，需Admin或有黄图命令授权'},
+  reverse:{name:'倒放',cat:'group',badge:'group',desc:'GIF倒放。发送图片+/倒放 或 回复图片消息+/倒放',params:[],tpl:'/倒放',noPerm:1},
+  config_at:{name:'config at',cat:'group',badge:'group',desc:'配置推送时@特定成员。@all成功时优先，@all失败时fallback',
+    params:[{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Id',type:'str',label:'主播ID',req:1},{id:'Action',type:'enum',label:'操作',opts:['add','remove','clear','show'],req:1},{id:'QQ',type:'tags',label:'QQ号',opt:1,hint:'add/remove时使用，可多个'}],
+    tpl:'/config at -s {Site} {Id} {Action} {QQ}',perm:'admin / 群管理员 / QQ管理员'},
+  config_atall:{name:'config at_all',cat:'group',badge:'group',desc:'配置推送时@全体成员。前提: bot必须为群管理员。同主播2h内仅@一次',
+    params:[{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Id',type:'str',label:'主播ID',req:1},{id:'Switch',type:'enum',label:'开关',opts:['on','off'],def:'on'}],
+    tpl:'/config at_all -s {Site} {Id} {Switch}',perm:'admin / 群管理员 / QQ管理员',note:'bot必须是QQ群管理员，否则@all不生效'},
+  config_title:{name:'config title_notify',cat:'group',badge:'group',desc:'直播间标题变更时重新推送',
+    params:[{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Id',type:'str',label:'主播ID',req:1},{id:'Switch',type:'enum',label:'开关',opts:['on','off'],def:'off'}],
+    tpl:'/config title_notify -s {Site} {Id} {Switch}',perm:'admin / 群管理员 / QQ管理员'},
+  config_offline:{name:'config offline_notify',cat:'group',badge:'group',desc:'下播时推送',
+    params:[{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Id',type:'str',label:'主播ID',req:1},{id:'Switch',type:'enum',label:'开关',opts:['on','off'],def:'off'}],
+    tpl:'/config offline_notify -s {Site} {Id} {Switch}',perm:'admin / 群管理员 / QQ管理员'},
+  config_filter:{name:'config filter',cat:'group',badge:'group',desc:'配置动态过滤器。同时只能设一种',
+    params:[{id:'SubCmd',type:'enum',label:'过滤方式',opts:['type','not_type','text','clear','show'],req:1},{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Id',type:'str',label:'主播ID',req:1},{id:'Values',type:'tags',label:'值',opt:1,hint:'type填动态类型；text填关键字；clear/show留空'}],
+    tpl:'/config filter {SubCmd} -s {Site} {Id} {Values}',perm:'admin / 群管理员 / QQ管理员'},
+  silence:{name:'silence',cat:'group',badge:'group',desc:'群沉默模式。抑制语法错误、权限不足、help输出',
+    params:[{id:'Delete',type:'bool',label:'取消设置',def:0,short:'d'}],
+    tpl:'/silence',toggle:{on:'/silence',off:'/silence -d',t:'Delete'},perm:'admin / 群管理员'},
+  grant:{name:'grant',cat:'group',badge:'group',desc:'授权管理。授予/取消命令权限或角色',
+    params:[{id:'Mode',type:'enum',label:'授权类型',opts:['command','role'],req:1,hint:'命令权限 或 角色'},{id:'CmdOrRole',type:'str',label:'-c命令名 或 -r Admin/GroupAdmin',req:1},{id:'Target',type:'str',label:'目标QQ号',req:1},{id:'Delete',type:'bool',label:'取消模式',def:0,short:'d'}],
+    tpl:'/grant {grantFlag} {Target}',dyn:1,perm:'admin / 群管理员'},
+  enable:{name:'enable',cat:'group',badge:'group',desc:'在当前群启用命令',
+    params:[{id:'Command',type:'str',label:'命令名',req:1,hint:'要启用的命令'}],
+    tpl:'/enable {Command}',perm:'admin / 群管理员',note:'不可操作: enable/disable/grant/block等18个系统命令'},
+  disable:{name:'disable',cat:'group',badge:'group',desc:'在当前群禁用命令',
+    params:[{id:'Command',type:'str',label:'命令名',req:1}],
+    tpl:'/disable {Command}',perm:'admin / 群管理员',note:'不可操作同上'},
+  cleanconcern:{name:'清除订阅',cat:'group',badge:'group',desc:'批量清除当前群订阅',
+    params:[{id:'Site',type:'enum',label:'网站',opts:[''].concat(SITES),opt:1,short:'s',hint:'留空=全部'},{id:'Type',type:'str',label:'类型',opt:1,short:'t',hint:'留空=全部'}],
+    tpl:'/清除订阅',extras:['-s {Site}','-t {Type}'],perm:'admin / 群管理员'},
+  // ===== PRIVATE =====
+  ping:{name:'ping',cat:'private',badge:'both',desc:'连通性测试，返回pong',params:[],tpl:'/ping',noPerm:1},
+  block:{name:'block',cat:'private',badge:'admin',desc:'黑名单管理。拉黑的用户/群的所有命令被静默丢弃',
+    params:[{id:'Uin',type:'str',label:'QQ号或群号',req:1},{id:'Days',type:'num',label:'天数',opt:1,def:'0',hint:'0=永久'},{id:'Delete',type:'bool',label:'取消拉黑(-d)',def:0,short:'d'}],
+    tpl:'/block {Uin} {Days}',toggle:{suffix:1,t:'Delete'},perm:'仅 Admin'},
+  mode:{name:'mode',cat:'private',badge:'admin',desc:'切换bot工作模式。公开=自动同意；私人=自动拒绝；审核=保留等候手动处理',
+    params:[{id:'Mode',type:'enum',label:'模式',opts:['','公开','私人','审核'],opt:1,hint:'留空=查看当前模式'}],
+    tpl:'/mode {Mode}',perm:'仅 Admin'},
+  admin:{name:'admin',cat:'private',badge:'admin',desc:'查看权限列表',
+    params:[{id:'Group',type:'str',label:'群号',opt:1,short:'g',hint:'留空=全局Admin；填群号=该群GroupAdmin'}],
+    tpl:'/admin',extras:['-g {Group}'],perm:'全局:Admin；群:Admin或该群GroupAdmin'},
+  silence_priv:{name:'silence (私聊)',cat:'private',badge:'admin',desc:'全局/按群沉默模式',
+    params:[{id:'Group',type:'str',label:'群号',opt:1,short:'g',hint:'不填=全局'},{id:'Delete',type:'bool',label:'取消设置',def:0,short:'d'}],
+    tpl:'/silence -g {Group}',toggle:{on:'/silence -g {Group}',off:'/silence -d -g {Group}',t:'Delete'},perm:'仅 Admin'},
+  grouprequest:{name:'群邀请',cat:'private',badge:'admin',desc:'处理待审核的群邀请(审核模式下保留)',
+    params:[{id:'RequestId',type:'str',label:'请求ID',opt:1,hint:'留空=查看全部'},{id:'Reject',type:'bool',label:'拒绝',def:0,short:'r'},{id:'All',type:'bool',label:'全部操作',def:0,short:'a'}],
+    tpl:'/群邀请 {RequestId}',toggles:[{flag:'-r',t:'Reject',label:'拒绝'},{flag:'-a',t:'All',label:'全部'}],perm:'仅 Admin'},
+  friendrequest:{name:'好友申请',cat:'private',badge:'admin',desc:'处理待审核的好友请求',
+    params:[{id:'RequestId',type:'str',label:'请求ID',opt:1},{id:'Reject',type:'bool',label:'拒绝',def:0,short:'r'},{id:'All',type:'bool',label:'全部操作',def:0,short:'a'}],
+    tpl:'/好友申请 {RequestId}',toggles:[{flag:'-r',t:'Reject',label:'拒绝'},{flag:'-a',t:'All',label:'全部'}],perm:'仅 Admin'},
+  whosyourdaddy:{name:'whosyourdaddy',cat:'private',badge:'both',desc:'首次设置管理员。bot无Admin时第一个使用者自动成为Admin',params:[],tpl:'/whosyourdaddy',note:'仅在bot无Admin时可用',noPerm:1},
+  quit:{name:'quit',cat:'private',badge:'admin',desc:'退出群聊并清除数据',
+    params:[{id:'GroupCode',type:'str',label:'群号',req:1},{id:'Force',type:'bool',label:'强制清除(-f)',def:0,short:'f'}],
+    tpl:'/quit {GroupCode}',extCond:{Force:'-f'},perm:'仅 Admin'},
+  sysinfo:{name:'sysinfo',cat:'private',badge:'admin',desc:'系统信息：好友数、群数、各站订阅数',params:[],tpl:'/sysinfo',perm:'仅 Admin'},
+  log:{name:'log',cat:'private',badge:'admin',desc:'查看日志',
+    params:[{id:'N',type:'num',label:'行数',opt:1,def:'10'},{id:'Date',type:'str',label:'日期',opt:1,short:'d',hint:'格式 2006-01-02'},{id:'Keyword',type:'str',label:'关键字',opt:1,short:'k'}],
+    tpl:'/log {N}',extras:['-d {Date}','-k {Keyword}'],perm:'仅 Admin'},
+  noupdate:{name:'退订更新',cat:'private',badge:'admin',desc:'退订/订阅bot更新通知',
+    params:[{id:'Delete',type:'bool',label:'重新订阅(-d)',def:0,short:'d'}],
+    tpl:'/退订更新',toggle:{on:'/退订更新',off:'/退订更新 -d',t:'Delete'},perm:'仅 Admin'},
+  abnormalconcern:{name:'检测异常订阅',cat:'private',badge:'both',desc:'检测已不在的群的残留订阅',params:[],tpl:'/检测异常订阅',noPerm:1},
+  cleanconcern_priv:{name:'清除订阅 (私聊)',cat:'private',badge:'admin',desc:'批量清除订阅(支持多群、多条件)',
+    params:[{id:'GroupCodes',type:'tags',label:'群号',opt:1,short:'g',hint:'多个逗号分隔'},{id:'Site',type:'enum',label:'网站',opts:[''].concat(SITES),opt:1,short:'s'},{id:'Type',type:'str',label:'类型',opt:1,short:'t'},{id:'Abnormal',type:'bool',label:'仅清除异常订阅',def:0,special:'--abnormal'}],
+    tpl:'/清除订阅',extras:['-g {GroupCodes}','-s {Site}','-t {Type}','--abnormal'],extCond:{Abnormal:'--abnormal'},perm:'仅 Admin'},
+  watch_priv:{name:'watch (私聊)',cat:'private',badge:'both',desc:'跨群订阅(需-g指定群号)',
+    params:[{id:'Group',type:'str',label:'群号',req:1,short:'g'},{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Type',type:'enum',label:'类型',opts:['','live','news'],opt:1,short:'t'},{id:'Id',type:'str',label:'主播ID',req:1}],
+    tpl:'/watch -g {Group} -s {Site} -t {Type} {Id}'},
+  unwatch_priv:{name:'unwatch (私聊)',cat:'private',badge:'both',desc:'跨群取消订阅',
+    params:[{id:'Group',type:'str',label:'群号',req:1,short:'g'},{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Type',type:'enum',label:'类型',opts:['','live','news'],opt:1,short:'t'},{id:'Id',type:'str',label:'主播ID',req:1}],
+    tpl:'/unwatch -g {Group} -s {Site} -t {Type} {Id}'},
+  config_priv:{name:'config (私聊)',cat:'private',badge:'both',desc:'跨群配置(需-g指定群号)。子命令同群聊版',
+    params:[{id:'Group',type:'str',label:'群号',req:1,short:'g'},{id:'SubCmd',type:'enum',label:'子命令',opts:['at','at_all','title_notify','offline_notify','filter'],req:1},{id:'Site',type:'enum',label:'网站',opts:SITES,def:'bilibili',short:'s'},{id:'Id',type:'str',label:'主播ID',req:1},{id:'Extra',type:'str',label:'额外参数',opt:1,hint:'例: on / off / add 10000 等'}],
+    tpl:'/config -g {Group} {SubCmd} -s {Site} {Id} {Extra}'},
+  enable_priv:{name:'enable (私聊)',cat:'private',badge:'both',desc:'跨群启用命令',
+    params:[{id:'Group',type:'str',label:'群号',req:1,short:'g'},{id:'Command',type:'str',label:'命令名',req:1},{id:'Global',type:'bool',label:'全局(--global)',def:0,special:'--global'}],
+    tpl:'/enable {globalFlag} -g {Group} {Command}',dyn:1},
+  disable_priv:{name:'disable (私聊)',cat:'private',badge:'both',desc:'跨群禁用命令',
+    params:[{id:'Group',type:'str',label:'群号',req:1,short:'g'},{id:'Command',type:'str',label:'命令名',req:1},{id:'Global',type:'bool',label:'全局(--global)',def:0,special:'--global'}],
+    tpl:'/disable {globalFlag} -g {Group} {Command}',dyn:1},
+  grant_priv:{name:'grant (私聊)',cat:'private',badge:'both',desc:'跨群授权管理',
+    params:[{id:'Group',type:'str',label:'群号',opt:1,short:'g'},{id:'Mode',type:'enum',label:'授权类型',opts:['command','role'],req:1},{id:'CmdOrRole',type:'str',label:'命令名 或 Admin/GroupAdmin',req:1},{id:'Target',type:'str',label:'目标QQ号',req:1},{id:'Delete',type:'bool',label:'取消模式',def:0,short:'d'}],
+    tpl:'/grant {grantFlag} -g {Group} {Target}',dyn:1},
+  list_priv:{name:'list (私聊)',cat:'private',badge:'both',desc:'跨群查看订阅',
+    params:[{id:'Group',type:'str',label:'群号',req:1,short:'g'},{id:'Site',type:'enum',label:'网站',opts:[''].concat(SITES),opt:1,short:'s'}],
+    tpl:'/list -g {Group}',extras:['-s {Site}']},
+};
+
+// ============ STATE ============
+var activeKey = null, activeCmd = null, formValues = {};
+
+// ============ RENDER ============
+function renderSidebar(){
+  var gl=document.getElementById('group-list'), pl=document.getElementById('private-list');
+  gl.innerHTML=''; pl.innerHTML='';
+  Object.keys(COMMANDS).forEach(function(k){
+    var cmd=COMMANDS[k], el=document.createElement('div');
+    el.className='cmd-item'; el.dataset.key=k; el.onclick=function(){selectCommand(k)};
+    el.innerHTML='<span class="name">/'+esc(cmd.name)+'</span>';
+    var b=cmd.badge==='admin'?'<span class="badge badge-admin">Admin</span>':
+            cmd.badge==='both'?'<span class="badge badge-both">全</span>':
+            '<span class="badge badge-group">群</span>';
+    el.innerHTML+=b;
+    (cmd.cat==='group'?gl:pl).appendChild(el);
+  });
+}
+
+function filterCommands(){
+  var q=document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('.cmd-item').forEach(function(el){
+    var cmd=COMMANDS[el.dataset.key];
+    el.style.display = (!q||cmd.name.toLowerCase().indexOf(q)>-1||cmd.desc.toLowerCase().indexOf(q)>-1||el.dataset.key.indexOf(q)>-1)?'':'none';
+  });
+}
+
+function selectCommand(key){
+  activeKey=key; activeCmd=COMMANDS[key]; formValues={};
+  (activeCmd.params||[]).forEach(function(p){
+    if(p.def!==undefined) formValues[p.id]=p.def;
+    else if(p.type==='bool') formValues[p.id]=false;
+    else formValues[p.id]=(p.type==='num'&&!p.opt)?'0':'';
+  });
+  document.querySelectorAll('.cmd-item').forEach(function(el){el.classList.remove('active')});
+  var t=document.querySelector('.cmd-item[data-key="'+key+'"]');
+  if(t) t.classList.add('active');
+  document.getElementById('cmd-title').textContent='/'+activeCmd.name;
+  document.getElementById('cmd-hint').textContent=activeCmd.desc||'';
+  renderForm(); updatePreview();
+}
+
+function renderForm(){
+  var area=document.getElementById('form-area');
+  if(!activeCmd){area.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 2 4.5 9h-9L12 2Z"/><path d="M3 22 4.5 19h15l1.5 3"/><line x1="12" y1="11" x2="12" y2="19"/></svg><h3>选择一个命令</h3></div>';return;}
+  var h='';
+  if(activeCmd.note) h+='<div class="desc-card">⚠️ <b>注意：</b>'+esc(activeCmd.note)+'</div>';
+  if(activeCmd.perm) h+='<div class="desc-card">🔐 权限：<b>'+esc(activeCmd.perm)+'</b></div>';
+  if(activeCmd.noPerm) h+='<div class="desc-card">👤 无权限限制</div>';
+  activeCmd.params.forEach(function(p){
+    var v=formValues[p.id];
+    if(v===undefined) v=(p.def!==undefined?p.def:(p.type==='bool'?false:''));
+    h+='<div class="param-group">';
+    h+='<div class="param-label">';
+    if(p.short) h+='<span class="flag">-'+p.short+'</span>';
+    if(p.special) h+='<span class="flag">'+p.special+'</span>';
+    h+=esc(p.label);
+    if(p.req && !p.opt) h+='<span class="required-mark">*</span>';
+    h+='</div>';
+    if(p.type==='bool'){
+      h+='<div class="toggle-row"><label class="toggle"><input type="checkbox" data-id="'+p.id+'" onchange="onChange(this)" '+(v?'checked':'')+'><span class="slider"></span></label>';
+      h+='<span style="font-size:12px;color:var(--text2)">'+(p.short?'-'+p.short+' ':'')+(p.special||'')+' '+(p.hint||'')+'</span></div>';
+    }else if(p.type==='enum'){
+      h+='<select class="param-input" data-id="'+p.id+'" onchange="onChange(this)">';
+      (p.opts||[]).forEach(function(o){h+='<option value="'+o+'" '+(String(v)===String(o)?'selected':'')+'>'+(o||'(空)')+'</option>'});
+      h+='</select>';
+    }else if(p.type==='tags'){
+      h+='<div class="tags-container" id="tags-'+p.id+'"></div>';
+      h+='<div class="tag-input-wrap"><input type="text" class="param-input" id="tag-in-'+p.id+'" placeholder="输入后回车或点击添加..." onkeydown="onTagKeydown(event,\''+p.id+'\')"><button onclick="addTagBtn(\''+p.id+'\')">+ 添加</button></div>';
+    }else{
+      h+='<input type="'+(p.type==='num'?'number':'text')+'" class="param-input" data-id="'+p.id+'" value="'+esc(String(v||''))+'" oninput="onChange(this)" placeholder="'+(p.opt?'可选':'')+'">';
+    }
+    if(p.hint) h+='<div class="param-hint">'+esc(p.hint)+'</div>';
+    h+='</div>';
+  });
+  if(activeCmd.toggles){
+    h+='<div class="desc-card">';
+    activeCmd.toggles.forEach(function(t){
+      var c=formValues[t.t]||false;
+      h+='<label style="margin-right:12px;cursor:pointer;font-size:12px"><input type="checkbox" data-id="'+t.t+'" onchange="onChange(this)" '+(c?'checked':'')+'> '+t.flag+' '+t.label+'</label>';
+    });
+    h+='</div>';
+  }
+  area.innerHTML=h;
+  activeCmd.params.forEach(function(p){if(p.type==='tags') renderTags(p.id)});
+}
+
+function onChange(el){
+  var id=el.dataset.id;
+  if(el.type==='checkbox') formValues[id]=el.checked;
+  else formValues[id]=el.value;
+  if(activeCmd&&activeCmd.toggles) activeCmd.toggles.forEach(function(t){if(formValues[t.t]===undefined) formValues[t.t]=false});
+  updatePreview();
+}
+
+function getTags(id){var r=formValues[id];return Array.isArray(r)?r:(typeof r==='string'&&r.trim()?r.split(/[,，\s]+/).filter(Boolean):[])}
+function setTags(id,arr){formValues[id]=arr;renderTags(id);updatePreview()}
+function renderTags(id){
+  var c=document.getElementById('tags-'+id); if(!c) return;
+  var t=getTags(id);
+  c.innerHTML=t.map(function(v,i){return '<span class="tag">'+esc(v)+'<span class="rm" onclick="rmTag(\''+id+'\','+i+')">×</span></span>'}).join('');
+}
+function onTagKeydown(e,id){if(e.key==='Enter'){e.preventDefault();addTagBtn(id)}}
+function addTagBtn(id){
+  var inp=document.getElementById('tag-in-'+id); if(!inp) return;
+  var v=inp.value.trim(); if(!v) return;
+  var t=getTags(id); t.push(v); setTags(id,t); inp.value=''; inp.focus();
+}
+function rmTag(id,i){var t=getTags(id);t.splice(i,1);setTags(id,t)}
+function resetForm(){if(activeCmd) selectCommand(activeKey)}
+
+// ============ COMMAND BUILDING ============
+function isEmptyVal(v){return v===undefined||v===''||v==='0'||v===false}
+
+function fillPlaceholders(str, vals, cmd){
+  // Pre-strip: remove -flag {placeholder} for empty optional params with short flag
+  cmd.params.forEach(function(p){
+    if(!p.short || !p.opt) return;
+    var v=vals[p.id]!==undefined?vals[p.id]:(p.def!==undefined?p.def:'');
+    if(p.type==='tags'){var t=getTags(p.id);v=t.join(' ')}
+    if(p.type==='bool') v=(v||v===true)?'1':'';
+    if(isEmptyVal(v)) str=str.replace(new RegExp('\\s*-'+p.short+'\\s*\\{'+p.id+'\\}','g'),'');
+  });
+  // Replace remaining placeholders
+  cmd.params.forEach(function(p){
+    var v=vals[p.id]!==undefined?vals[p.id]:(p.def!==undefined?p.def:'');
+    if(p.type==='tags'){var t=getTags(p.id);v=t.join(' ')}
+    if(p.type==='bool') v='';
+    str=str.replace(new RegExp('\\{'+p.id+'\\}','g'),(!isEmptyVal(v))?String(v):'');
+  });
+  return str.replace(/\s+/g,' ').trim();
+}
+
+function buildCommand(){
+  if(!activeCmd) return '';
+  var cmd=activeCmd, vals=formValues, result=cmd.tpl||'';
+  result=fillPlaceholders(result, vals, cmd);
+  // Dynamic templates
+  if(cmd.dyn){
+    if(cmd.name==='grant'||cmd.name==='grant (私聊)'){
+      var mode=vals['Mode']||'command';
+      var flag=mode==='command'?'-c '+(vals['CmdOrRole']||''):'-r '+(vals['CmdOrRole']||'');
+      result=result.replace('{grantFlag}',flag).replace(/\s+/g,' ').trim();
+      if(vals['Delete']) result+=' -d';
+    }else if(cmd.name==='enable (私聊)'||cmd.name==='disable (私聊)'){
+      result=result.replace('{globalFlag}',vals['Global']?'--global':'');
+    }
+  }
+  // Toggle param
+  if(cmd.toggle){
+    if(cmd.toggle.on&&cmd.toggle.off){
+      result=vals[cmd.toggle.t]?cmd.toggle.off:cmd.toggle.on;
+      result=fillPlaceholders(result, vals, cmd);
+    }
+    else if(cmd.toggle.suffix){if(vals[cmd.toggle.t]) result+=((result?' ':'')+'-d');}
+  }
+  // Extra args
+  var extras='';
+  (cmd.extras||[]).forEach(function(a){
+    var src=fillPlaceholders(a, vals, cmd);
+    // If after filling, non-flag content remains, keep this extra
+    var stripped=src.replace(/^[\s-]+/g,'').replace(/-[a-z]+\s*/g,'').replace(/--\S+\s*/g,'').trim();
+    if(stripped) extras+=(extras?' ':'')+src;
+  });
+  // Extra conditionals
+  if(cmd.extCond && typeof cmd.extCond === 'object'){
+    Object.keys(cmd.extCond).forEach(function(k){
+      if(vals[k]){if(cmd.extCond[k]&&extras.indexOf(cmd.extCond[k])===-1) extras+=(extras?' ':'')+cmd.extCond[k]}
+      else{extras=extras.replace(new RegExp('\\s*'+cmd.extCond[k].replace(/[-\s]/g,'[-\s]')+'\\s*','g'),' ')}
+    });
+  }
+  result=(result+' '+extras).replace(/\s+/g,' ').trim();
+  // Extra toggles
+  if(cmd.toggles) cmd.toggles.forEach(function(t){if(vals[t.t]) result+=' '+t.flag});
+  // Collapse whitespace only — no aggressive flag stripping
+  result=result.replace(/\s+/g,' ').trim();
+  return result||cmd.tpl;
+}
+
+function updatePreview(){
+  var code=document.getElementById('preview-code');
+  var cmd=buildCommand();
+  if(cmd&&cmd!=='') code.textContent=cmd;
+  else code.innerHTML='<span class="dim">/命令 [参数...]</span>';
+}
+
+function copyCommand(){
+  var cmd=buildCommand(); if(!cmd) return;
+  navigator.clipboard.writeText(cmd).then(function(){
+    var btn=document.getElementById('copy-btn');
+    btn.textContent='✅ 已复制'; btn.classList.add('copied');
+    setTimeout(function(){btn.textContent='📋 复制';btn.classList.remove('copied')},1500);
+  }).catch(function(){prompt('复制以下命令：',cmd)});
+}
+
+// ============ DARK ============
+function toggleDark(){
+  var h=document.documentElement;
+  h.classList.toggle('dark');
+  localStorage.setItem('ddbot-dark',h.classList.contains('dark'));
+}
+(function(){if(localStorage.getItem('ddbot-dark')==='false')document.documentElement.classList.remove('dark')})();
+
+// ============ KEYBOARD ============
+document.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.getElementById('search').focus()}
+  if(e.key==='Escape'){document.getElementById('search').value='';filterCommands()}
+});
+
+// ============ UTILS ============
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ============ INIT ============
+renderSidebar();
+selectCommand('help');
+</script>
+</body>
+</html>
