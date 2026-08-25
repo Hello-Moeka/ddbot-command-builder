@@ -48,9 +48,9 @@
 gh repo edit --pages-branch main
 ```
 
-## 许可
+## 许可证
 
-MIT License
+本项目基于 [GPL-3.0](LICENSE) 协议开源。
 
 ---
 
